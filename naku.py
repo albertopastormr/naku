@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     if args.action == "init":
         ps = PubSubClient()
-        dp = DataprocClient
+        dp = DataprocClient()
         ps.create_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.create_topic(args.project_id, OUTPUT_TOPIC_NAME)
         ps.list_topics(args.project_id)
@@ -81,9 +81,12 @@ if __name__ == '__main__':
         pass
         # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
-        pass
+        ps = PubSubClient()
+        dp = DataprocClient()
+        ps.delete_topic(args.project_id, INPUT_TOPIC_NAME)
+        ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
     elif args.action == "list":
         ps = PubSubClient()
-        dp = DataprocClient
+        dp = DataprocClient()
         ps.list_topics(args.project_id)
         ps.list_subscriptions(args.project_id)
