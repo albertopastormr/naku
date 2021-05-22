@@ -56,6 +56,11 @@ def parse_args():
     parser_delete.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
                            help="your Google Cloud project ID")
 
+    parser_list = subparsers.add_parser('list')
+
+    parser_list.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
+                           help="your Google Cloud project ID")
+
     args = parser.parse_args()
     
     return args
@@ -77,3 +82,8 @@ if __name__ == '__main__':
         # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         pass
+    elif args.action == "list":
+        ps = PubSubClient()
+        dp = DataprocClient
+        ps.list_topics(args.project_id)
+        ps.list_subscriptions(args.project_id)
