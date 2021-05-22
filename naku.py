@@ -2,7 +2,7 @@ import argparse
 
 from pubsub import PubSubClient
 from dataproc import DataprocClient
-from auth import auth_gcp
+from auth import auth_gcp, delete_service_account
 
 
 # once I create config.yaml, project_id could be set there
@@ -51,6 +51,9 @@ def parse_args():
     parser_delete.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
                            help="your Google Cloud project ID")
 
+    parser_delete.add_argument('--delete_service_account', dest='del_ser_acc', action='store_true',
+                           help="your Google Cloud project ID")
+
     parser_list = subparsers.add_parser('list')
 
     parser_list.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
@@ -62,7 +65,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    print(args)
+    print(args) # to debug
 
     if args.action == "init":
         ps = PubSubClient()
@@ -75,8 +78,7 @@ if __name__ == '__main__':
     elif args.action == "auth":
         auth_gcp(SERVICE_ACCOUNT_NAME, args.project_id, args.filename)
     elif args.action == "launch":
-        pass
-        # publish_messages(args.project_id, args.topic_id)
+        pass # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
@@ -85,6 +87,8 @@ if __name__ == '__main__':
         ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
         ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
         dp.delete_cluster(args.project_id, CLUSTER_NAME)
+        if args.del_ser_acc:
+            delete_service_account(SERVICE_ACCOUNT_NAME, args.project_id)
     elif args.action == "list":
         ps = PubSubClient()
         dp = DataprocClient(REGION)

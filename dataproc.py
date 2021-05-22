@@ -1,13 +1,17 @@
 from google.cloud import dataproc_v1 as dataproc
+from exception_handler import exception_handler
+
 
 class DataprocClient:
 
+    @exception_handler
     def __init__(self, region):
         self.region = region
         self.cluster = dataproc.ClusterControllerClient(
             client_options={"api_endpoint": f"{region}-dataproc.googleapis.com:443"}
         )
 
+    @exception_handler
     def create_cluster(self, project_id, cluster_name):
         cluster_config = {
             "project_id": project_id,
@@ -23,6 +27,7 @@ class DataprocClient:
         )
         print(f"Cluster created: {cluster_name}")
 
+    @exception_handler
     def delete_cluster(self, project_id, cluster_name):
 
         self.cluster.delete_cluster(
@@ -31,6 +36,7 @@ class DataprocClient:
         
         print(f"Cluster deleted: {cluster_name}")
 
+    @exception_handler
     def list_clusters(self, project_id):
         print(f"Listing existing clusters in project {project_id}")
         for cluster in self.cluster.list_clusters(request={"project_id": project_id, "region":self.region}):
