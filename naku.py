@@ -74,6 +74,8 @@ if __name__ == '__main__':
         dp = DataprocClient()
         ps.create_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.create_topic(args.project_id, OUTPUT_TOPIC_NAME)
+        ps.create_subscription(args.project_id, INPUT_TOPIC_NAME, INPUT_SUB_NAME)
+        ps.create_subscription(args.project_id, OUTPUT_TOPIC_NAME, OUTPUT_SUB_NAME)
         ps.list_topics(args.project_id)
     elif args.action == "auth":
         auth_gcp(SERVICE_ACCOUNT_NAME, args.project_id, args.filename)
@@ -85,6 +87,8 @@ if __name__ == '__main__':
         dp = DataprocClient()
         ps.delete_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
+        ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
+        ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
     elif args.action == "list":
         ps = PubSubClient()
         dp = DataprocClient()
