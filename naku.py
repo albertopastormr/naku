@@ -16,8 +16,8 @@ OUTPUT_TOPIC_NAME="naku-output-topic"
 INPUT_SUB_NAME="naku-input-sub"
 OUTPUT_SUB_NAME="naku-output-sub"
 CLUSTER_NAME="naku-dataproc-cluster"
-CLUSTER_REGION="europe-west1"
-CLUSTER_ZONE="europe-west1-b"
+REGION="europe-west1"
+ZONE="europe-west1-b"
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='naku',
@@ -32,11 +32,6 @@ def parse_args():
 
     parser_init.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
                            help="your Google Cloud project ID")
-
-    parser_init.add_argument('--region', 
-                            choices=['asia-east1', 'asia-northeast1', 'asia-southeast1',
-                            'europe-west1','us-central1','us-east1','us-west1'],
-                            help='Location where the resources should be allocated')
     
     parser_auth = subparsers.add_parser('auth')
 
@@ -71,12 +66,12 @@ if __name__ == '__main__':
 
     if args.action == "init":
         ps = PubSubClient()
-        dp = DataprocClient()
+        dp = DataprocClient(REGION)
         ps.create_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.create_topic(args.project_id, OUTPUT_TOPIC_NAME)
         ps.create_subscription(args.project_id, INPUT_TOPIC_NAME, INPUT_SUB_NAME)
         ps.create_subscription(args.project_id, OUTPUT_TOPIC_NAME, OUTPUT_SUB_NAME)
-        ps.list_topics(args.project_id)
+        dp.create_cluster(args.project_id, CLUSTER_NAME)
     elif args.action == "auth":
         auth_gcp(SERVICE_ACCOUNT_NAME, args.project_id, args.filename)
     elif args.action == "launch":
@@ -84,13 +79,15 @@ if __name__ == '__main__':
         # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         ps = PubSubClient()
-        dp = DataprocClient()
+        dp = DataprocClient(REGION)
         ps.delete_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
         ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
         ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
+        dp.delete_cluster(args.project_id, CLUSTER_NAME)
     elif args.action == "list":
         ps = PubSubClient()
-        dp = DataprocClient()
+        dp = DataprocClient(REGION)
         ps.list_topics(args.project_id)
         ps.list_subscriptions(args.project_id)
+        dp.list_clusters(args.project_id)

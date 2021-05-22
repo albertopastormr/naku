@@ -40,7 +40,7 @@ class PubSubClient:
 
        
         topic = self.publisher.create_topic(request={"name": topic_path})
-        print("Topic created: {}".format(topic.name))
+        print(f"Topic created: {topic.name}")
     
     @exception_handler
     def delete_topic(self, project_id, topic_id):
@@ -48,7 +48,7 @@ class PubSubClient:
 
         
         self.publisher.delete_topic(request={"topic": topic_path})
-        print("Topic deleted: {}".format(topic_path))
+        print(f"Topic deleted: {topic_path}")
         
     @exception_handler
     def list_topics(self, project_id):
