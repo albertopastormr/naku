@@ -52,12 +52,15 @@ def parse_args():
                            help="your Google Cloud project ID")
 
     parser_delete.add_argument('--delete_service_account', dest='del_ser_acc', action='store_true',
-                           help="your Google Cloud project ID")
+                           help="whether to delete the service account related to the infrastructure")
 
     parser_list = subparsers.add_parser('list')
 
     parser_list.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
                            help="your Google Cloud project ID")
+
+    parser_list.add_argument('--only_jobs', dest='only_jobs', action='store_true',
+                           help="shows only the jobs previously submitted")
 
     args = parser.parse_args()
     
@@ -78,7 +81,9 @@ if __name__ == '__main__':
     elif args.action == "auth":
         auth_gcp(SERVICE_ACCOUNT_NAME, args.project_id, args.filename)
     elif args.action == "launch":
-        pass # publish_messages(args.project_id, args.topic_id)
+        dp = DataprocClient(REGION)
+        dp.submit_job(args.project_id, CLUSTER_NAME)
+        # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
@@ -92,6 +97,8 @@ if __name__ == '__main__':
     elif args.action == "list":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
-        ps.list_topics(args.project_id)
-        ps.list_subscriptions(args.project_id)
-        dp.list_clusters(args.project_id)
+        if not args.only_jobs:
+            ps.list_topics(args.project_id)
+            ps.list_subscriptions(args.project_id)
+            dp.list_clusters(args.project_id)
+        dp.list_jobs(args.project_id)
