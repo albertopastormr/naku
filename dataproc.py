@@ -82,3 +82,12 @@ class DataprocClient:
                             + f" executed on cluster '{job.placement.cluster_name}'"
                             + f"\n\tStatus: {job.status.state.name}: {job.status.details}"
                             + f' ({job.status.state_start_time.strftime("%H:%M:%S %d-%m-%Y")})')
+
+    def delete_jobs(self, project_id):
+        for job in self.job_client.list_jobs(request={"project_id": project_id, "region":self.region}):
+            self.job_client.delete_job(
+                request={"project_id":project_id, "region":self.region, "job_id":job.reference.job_id}
+            )
+            print(f"Job deleted: {job.reference.job_id}")
+
+    # delete jobs https://googleapis.dev/python/dataproc/latest/dataproc_v1beta2/job_controller.html#google.cloud.dataproc_v1beta2.services.job_controller.JobControllerAsyncClient.delete_job

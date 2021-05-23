@@ -57,6 +57,9 @@ def parse_args():
     parser_delete.add_argument('--delete_service_account', dest='del_ser_acc', action='store_true',
                            help="whether to delete the service account related to the infrastructure")
 
+    parser_delete.add_argument('--keep_jobs', dest='keep_jobs', action='store_true',
+                           help="whether to delete the jobs submitted by the cluster")
+
     parser_list = subparsers.add_parser('list')
 
     parser_list.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
@@ -99,12 +102,15 @@ if __name__ == '__main__':
         ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
         ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
         ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
+        if not args.keep_jobs:
+            dp.delete_jobs(args.project_id)
         dp.delete_cluster(args.project_id, CLUSTER_NAME)
         st.delete_blob(BUCKET_NAME, PYSPARK_FILENAME)
         st.delete_bucket(BUCKET_NAME)
         st.delete_buckets_by_prefix('dataproc-')
         if args.del_ser_acc:
             delete_service_account(SERVICE_ACCOUNT_NAME, args.project_id)
+
         print("(The changes may take some time to be reflected in your GCP project)")
     elif args.action == "list":
         ps = PubSubClient()
