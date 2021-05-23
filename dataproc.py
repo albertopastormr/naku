@@ -1,3 +1,4 @@
+import os
 from google.cloud import dataproc_v1 as dataproc
 
 #from google.cloud import storage
@@ -55,14 +56,14 @@ class DataprocClient:
                             + f"\n\tNumber of workers: {cluster.config.worker_config.num_instances}")
 
     @exception_handler
-    def submit_job(self, project_id, cluster_name):
+    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename):
 
         job = {
                 'placement': {
                     'cluster_name': cluster_name
                 },
                 'pyspark_job': {
-                    'main_python_file_uri': 'model.py'
+                    'main_python_file_uri': f'gs://{bucket_name}/{pyspark_filename}'
                 }
             }
 

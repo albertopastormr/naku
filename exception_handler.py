@@ -12,7 +12,7 @@ def exception_handler(func):
         except InvalidArgument:
             print(f"WARNING: Invalid argument used or resource '{args[2]}' already exists")
         except NotFound:
-            print(f"WARNING: Resource '{args[2]}' not found")
+            print(f"WARNING: Resource '{args[2] if len(args) > 2 else args[1]}' not found")
         except DefaultCredentialsError:
             print("ERROR: Could not automatically determine credentials, launch auth option first")
             sys.exit(1)

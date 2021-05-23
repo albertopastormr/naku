@@ -2,6 +2,7 @@ import argparse
 
 from pubsub import PubSubClient
 from dataproc import DataprocClient
+from storage import StorageClient
 from auth import auth_gcp, delete_service_account
 
 
@@ -16,6 +17,8 @@ OUTPUT_TOPIC_NAME="naku-output-topic"
 INPUT_SUB_NAME="naku-input-sub"
 OUTPUT_SUB_NAME="naku-output-sub"
 CLUSTER_NAME="naku-dataproc-cluster"
+BUCKET_NAME="naku-support-bucket"
+PYSPARK_FILENAME="model.py"
 REGION="europe-west1"
 ZONE="europe-west1-b"
 
@@ -73,32 +76,44 @@ if __name__ == '__main__':
     if args.action == "init":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
+        st = StorageClient()
         ps.create_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.create_topic(args.project_id, OUTPUT_TOPIC_NAME)
         ps.create_subscription(args.project_id, INPUT_TOPIC_NAME, INPUT_SUB_NAME)
         ps.create_subscription(args.project_id, OUTPUT_TOPIC_NAME, OUTPUT_SUB_NAME)
         dp.create_cluster(args.project_id, CLUSTER_NAME)
+        st.create_bucket(BUCKET_NAME)
     elif args.action == "auth":
         auth_gcp(SERVICE_ACCOUNT_NAME, args.project_id, args.filename)
     elif args.action == "launch":
         dp = DataprocClient(REGION)
-        dp.submit_job(args.project_id, CLUSTER_NAME)
+        st = StorageClient()
+        st.upload_file(BUCKET_NAME, PYSPARK_FILENAME, PYSPARK_FILENAME)
+        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, PYSPARK_FILENAME)
         # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
+        st = StorageClient()
         ps.delete_topic(args.project_id, INPUT_TOPIC_NAME)
         ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
         ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
         ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
         dp.delete_cluster(args.project_id, CLUSTER_NAME)
+        st.delete_blob(BUCKET_NAME, PYSPARK_FILENAME)
+        st.delete_bucket(BUCKET_NAME)
+        st.delete_buckets_by_prefix('dataproc-')
         if args.del_ser_acc:
             delete_service_account(SERVICE_ACCOUNT_NAME, args.project_id)
+        print("(The changes may take some time to be reflected in your GCP project)")
     elif args.action == "list":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
+        st = StorageClient()
         if not args.only_jobs:
             ps.list_topics(args.project_id)
             ps.list_subscriptions(args.project_id)
             dp.list_clusters(args.project_id)
+            st.list_buckets()
         dp.list_jobs(args.project_id)
+        
