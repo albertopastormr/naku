@@ -18,7 +18,7 @@ INPUT_SUB_NAME="naku-input-sub"
 OUTPUT_SUB_NAME="naku-output-sub"
 CLUSTER_NAME="naku-dataproc-cluster"
 BUCKET_NAME="naku-support-bucket"
-PYSPARK_FILENAME="model.py"
+PYSPARK_FILENAME="try.py"
 REGION="europe-west1"
 ZONE="europe-west1-b"
 

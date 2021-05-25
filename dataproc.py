@@ -27,9 +27,13 @@ class DataprocClient:
         cluster_config = {
             "project_id": project_id,
             "cluster_name": cluster_name,
-            "config": {
+            "config": { 
                 "master_config": {"num_instances": 1, "machine_type_uri": "n1-standard-2"},
                 "worker_config": {"num_instances": 2, "machine_type_uri": "n1-standard-2"},
+                "initialization_actions":[ {"executable_file":f'gs://goog-dataproc-initialization-actions-{self.region}/python/pip-install.sh'}],
+                "gce_cluster_config": { # TODO: take pip packages from requirements.txt
+                    "metadata": {'PIP_PACKAGES':'apache-beam==2.29.0'}
+                }
             },
         }
 
@@ -91,3 +95,19 @@ class DataprocClient:
             print(f"Job deleted: {job.reference.job_id}")
 
     # delete jobs https://googleapis.dev/python/dataproc/latest/dataproc_v1beta2/job_controller.html#google.cloud.dataproc_v1beta2.services.job_controller.JobControllerAsyncClient.delete_job
+
+
+if __name__ == '__main__':
+    dp = DataprocClient("europe-west1")
+    #dp.delete_cluster("naku-demo", "naku-dataproc-cluster")
+    dp.create_cluster("naku-demo", "naku-dataproc-cluster")
+
+
+
+""" # this corresponds to the cluster creation command via CLI
+gcloud dataproc clusters create naku-dataproc-cluster \                                                                          ✔  2727  21:37:51
+    --region europe-west1 \
+    --metadata 'PIP_PACKAGES=apache-beam==2.29.0' \
+    --initialization-actions gs://goog-dataproc-initialization-actions-europe-west2/python/pip-install.sh
+
+"""
