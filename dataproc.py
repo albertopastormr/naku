@@ -32,7 +32,11 @@ class DataprocClient:
                 "worker_config": {"num_instances": 2, "machine_type_uri": "n1-standard-2"},
                 "initialization_actions":[ {"executable_file":f'gs://goog-dataproc-initialization-actions-{self.region}/python/pip-install.sh'}],
                 "gce_cluster_config": { # TODO: take pip packages from requirements.txt
-                    "metadata": {'PIP_PACKAGES':'apache-beam==2.29.0'}
+                    "metadata": {'PIP_PACKAGES':'apache-beam[gcp]==2.29.0'},
+                    "service_account_scopes": [
+                        "https://www.googleapis.com/auth/cloud-platform",
+                        "https://www.googleapis.com/auth/pubsub"
+                    ]
                 }
             },
         }
@@ -60,14 +64,16 @@ class DataprocClient:
                             + f"\n\tNumber of workers: {cluster.config.worker_config.num_instances}")
 
     @exception_handler
-    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename):
+    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename, input_sub, output_topic,):
 
         job = {
                 'placement': {
                     'cluster_name': cluster_name
                 },
                 'pyspark_job': {
-                    'main_python_file_uri': f'gs://{bucket_name}/{pyspark_filename}'
+                    'main_python_file_uri': f'gs://{bucket_name}/{pyspark_filename}',
+                    'args': [f'--project_id={project_id}', f'--input_sub={input_sub}',
+                             f'--output_topic={output_topic}']
                 }
             }
 

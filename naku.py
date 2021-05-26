@@ -98,7 +98,7 @@ if __name__ == '__main__':
         dp = DataprocClient(REGION)
         st = StorageClient()
         st.upload_file(BUCKET_NAME, args.pyspark_filename, args.pyspark_filename)
-        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename)
+        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename, INPUT_SUB_NAME, OUTPUT_TOPIC_NAME,)
         # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         ps = PubSubClient()
