@@ -63,3 +63,24 @@ class PubSubClient:
             request={"project": project_path}
         ):
             print("  --> " + subscription.name)
+    
+    @exception_handler
+    def publish_messages(self, project_id, topic_id, ):
+        topic_path = self.publisher.topic_path(project_id, topic_id)
+
+        for n in range(1, 10):
+            data = "Message number {}".format(n)
+            # Data must be a bytestring
+            data = data.encode("utf-8")
+            # When you publish a message, the client returns a future.
+            future = self.publisher.publish(topic_path, data)
+            print(future.result())
+
+        print(f"Published messages to {topic_path}.")
+
+
+# docs to consume messages http://www.theappliedarchitect.com/setting-up-gcp-pub-sub-integration-with-python/
+
+if __name__ == "__main__":
+    ps = PubSubClient()
+    ps.publish_messages("naku-demo", "naku-input-topic")
