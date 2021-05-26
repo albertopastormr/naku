@@ -14,7 +14,9 @@ def exception_handler(func):
         except NotFound:
             print(f"WARNING: Resource '{args[2] if len(args) > 2 else args[1]}' not found")
         except DefaultCredentialsError:
-            print("ERROR: Could not automatically determine credentials, launch auth option first")
+            print("ERROR: Could not automatically determine credentials; GOOGLE_APPLICATION_CREDENTIALS is not declare in your " 
+                    "environment or the path to which it points doesn't exist."
+                    " If you don't have a GCP credentials file yet, launch 'python naku.py auth -p <PROJECT_ID>' and follow the steps.")
             sys.exit(1)
         except PermissionDenied:
             print('ERROR: You have to enable the PubSub API: https://console.developers.google.com/apis/api/pubsub.googleapis.com/'

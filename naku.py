@@ -18,7 +18,7 @@ INPUT_SUB_NAME="naku-input-sub"
 OUTPUT_SUB_NAME="naku-output-sub"
 CLUSTER_NAME="naku-dataproc-cluster"
 BUCKET_NAME="naku-support-bucket"
-PYSPARK_FILENAME="try.py"
+PYSPARK_FILENAME="model-beam.py"
 REGION="europe-west1"
 ZONE="europe-west1-b"
 
@@ -49,6 +49,9 @@ def parse_args():
     parser_launch.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
                            help="your Google Cloud project ID")
 
+    parser_launch.add_argument("-f", '--filename', dest='pyspark_filename', type=str, default=PYSPARK_FILENAME,
+                           help="PySpark file to execute on Dataproc")
+
     parser_delete = subparsers.add_parser('delete')
 
     parser_delete.add_argument("-p", '--project_id', dest='project_id', type=str, required=True,
@@ -59,6 +62,9 @@ def parse_args():
 
     parser_delete.add_argument('--keep_jobs', dest='keep_jobs', action='store_true',
                            help="whether to delete the jobs submitted by the cluster")
+    
+    parser_delete.add_argument("-f", '--filename', dest='pyspark_filename', type=str, default=PYSPARK_FILENAME,
+                           help="path of the file previously executed on Dataproc, if it is the case")
 
     parser_list = subparsers.add_parser('list')
 
@@ -91,8 +97,8 @@ if __name__ == '__main__':
     elif args.action == "launch":
         dp = DataprocClient(REGION)
         st = StorageClient()
-        st.upload_file(BUCKET_NAME, PYSPARK_FILENAME, PYSPARK_FILENAME)
-        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, PYSPARK_FILENAME)
+        st.upload_file(BUCKET_NAME, args.pyspark_filename, args.pyspark_filename)
+        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename)
         # publish_messages(args.project_id, args.topic_id)
     elif args.action == "delete":
         ps = PubSubClient()
@@ -105,7 +111,7 @@ if __name__ == '__main__':
         if not args.keep_jobs:
             dp.delete_jobs(args.project_id)
         dp.delete_cluster(args.project_id, CLUSTER_NAME)
-        st.delete_blob(BUCKET_NAME, PYSPARK_FILENAME)
+        st.delete_blob(BUCKET_NAME, args.pyspark_filename)
         st.delete_bucket(BUCKET_NAME)
         st.delete_buckets_by_prefix('dataproc-')
         if args.del_ser_acc:

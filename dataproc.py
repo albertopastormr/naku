@@ -77,6 +77,8 @@ class DataprocClient:
 
         job_id = operation.reference.job_id
         print(f"Job submitted: {job_id}")
+        print(f"You can check its execution details and output at:"
+                f" https://console.cloud.google.com/dataproc/jobs/{job_id}?region={self.region}&project={project_id}")
 
     @exception_handler
     def list_jobs(self, project_id):
@@ -85,7 +87,8 @@ class DataprocClient:
             print("  --> "  + f"job id: {job.reference.job_id} [{job.pyspark_job.main_python_file_uri}]"
                             + f" executed on cluster '{job.placement.cluster_name}'"
                             + f"\n\tStatus: {job.status.state.name}: {job.status.details}"
-                            + f' ({job.status.state_start_time.strftime("%H:%M:%S %d-%m-%Y")})')
+                            + f' ({job.status.state_start_time.strftime("%H:%M:%S %d-%m-%Y")})'
+                            + f' [https://console.cloud.google.com/dataproc/jobs/{job.reference.job_id}?region={self.region}&project={project_id}]')
 
     def delete_jobs(self, project_id):
         for job in self.job_client.list_jobs(request={"project_id": project_id, "region":self.region}):
@@ -105,9 +108,11 @@ if __name__ == '__main__':
 
 
 """ # this corresponds to the cluster creation command via CLI
-gcloud dataproc clusters create naku-dataproc-cluster \                                                                          ✔  2727  21:37:51
+gcloud dataproc clusters create naku-dataproc-cluster \
     --region europe-west1 \
     --metadata 'PIP_PACKAGES=apache-beam==2.29.0' \
     --initialization-actions gs://goog-dataproc-initialization-actions-europe-west2/python/pip-install.sh
-
+docs: https://www.linkedin.com/pulse/how-do-you-create-gcp-data-proc-cluster-passing-json-rajib-deb/?trk=related_artice_How%20do%20you%20create%20a%20GCP%20data%20proc%20cluster%20by%20passing%20a%20JSON%3F_article-card_title
+docs: https://cloud.google.com/dataproc/docs/reference/rpc/google.cloud.dataproc.v1#google.cloud.dataproc.v1.ClusterConfig
+docs: https://cloud.google.com/dataproc/docs/tutorials/python-configuration
 """

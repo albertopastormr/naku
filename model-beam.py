@@ -6,7 +6,7 @@ options = PipelineOptions([
     "--runner=PortableRunner",
     "--job_endpoint=localhost:  ",
     "--environment_type=LOOPBACK"
-])
+]) # docs: https://beam.apache.org/documentation/runners/spark/
 
 with beam.Pipeline() as pipeline:
     result = (
