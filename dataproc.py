@@ -32,7 +32,7 @@ class DataprocClient:
                 "worker_config": {"num_instances": 2, "machine_type_uri": "n1-standard-2"},
                 "initialization_actions":[ {"executable_file":f'gs://goog-dataproc-initialization-actions-{self.region}/python/pip-install.sh'}],
                 "gce_cluster_config": { # TODO: take pip packages from requirements.txt
-                    "metadata": {'PIP_PACKAGES':'apache-beam[gcp]==2.29.0'},
+                    "metadata": {'PIP_PACKAGES':'apache-beam[gcp]==2.29.0 numpy==1.19.5'},
                     "service_account_scopes": [
                         "https://www.googleapis.com/auth/cloud-platform",
                         "https://www.googleapis.com/auth/pubsub"

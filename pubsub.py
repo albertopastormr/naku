@@ -1,5 +1,13 @@
 from google.cloud import pubsub_v1
 from exception_handler import exception_handler
+import base64
+import numpy as np
+from PIL import Image
+
+
+from io import BytesIO
+
+
 
 class PubSubClient:
     
@@ -68,13 +76,22 @@ class PubSubClient:
     def publish_messages(self, project_id, topic_id, ):
         topic_path = self.publisher.topic_path(project_id, topic_id)
 
-        for n in range(1, 10):
-            data = "Message number {}".format(n)
-            # Data must be a bytestring
-            data = data.encode("utf-8")
-            # When you publish a message, the client returns a future.
-            future = self.publisher.publish(topic_path, data)
-            print(future.result())
+        image = Image.open('images/00000001_000.png').resize((256,256), Image.NEAREST)
+
+        data = np.asarray(image)
+
+        np_bytes = BytesIO()
+        np.save(np_bytes, data, allow_pickle=True)
+        np_bytes = np_bytes.getvalue()
+        load_bytes = BytesIO(np_bytes)
+        q = np.load(load_bytes, allow_pickle=True)
+
+        print(q)
+        print(q.shape)
+        
+        # When you publish a message, the client returns a future.
+        future = self.publisher.publish(topic_path, np_bytes)
+        print(future.result())
 
         print(f"Published messages to {topic_path}.")
 

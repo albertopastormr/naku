@@ -1,18 +1,25 @@
 import logging
 import argparse
 
+import numpy as np
+from io import BytesIO
+
 import apache_beam as beam
-
-
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.transforms.window import FixedWindows
 
+"""
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.applications.vgg16 import preprocess_input
+import numpy as np
+
+model = VGG16()
+"""
 
 class GroupWindowsIntoBatches(beam.PTransform):
     """
     A composite transform that groups Pub/Sub messages
     """
-
     def __init__(self, window_size):
         # Convert minutes into seconds.
         self.window_size = int(window_size * 60)
@@ -30,10 +37,17 @@ class PredictLabel(beam.DoFn):
 
     def process(self, element):
         """pubsub input is a byte string"""
-        data = element.decode('utf-8')
-        """do some custom transform here"""
-        data = data.encode('utf-8')
-        yield data
+        #data = element.decode('utf-8')
+        # https://stackoverflow.com/questions/53376786/convert-byte-array-back-to-numpy-array
+
+        load_bytes = BytesIO(element)
+        q = np.load(load_bytes, allow_pickle=True)
+
+        print(q)
+        print(q.shape)
+
+        data = q.encode('utf-8')
+        yield element
 
 
 def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipeline_args=None):
