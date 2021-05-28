@@ -1,5 +1,5 @@
 from google.auth.exceptions import DefaultCredentialsError
-from google.api_core.exceptions import AlreadyExists, InvalidArgument, PermissionDenied, NotFound
+from google.api_core.exceptions import AlreadyExists, InvalidArgument, PermissionDenied, NotFound, Conflict
 import sys
 
 def exception_handler(func):
@@ -9,6 +9,8 @@ def exception_handler(func):
             return func(*args, **kwargs)
         except AlreadyExists:
             print(f"WARNING: Resource '{args[2]}' already exists")
+        except Conflict:
+            print(f"WARNING: Resource '{args[1]}' already exists")
         except InvalidArgument:
             print(f"WARNING: Invalid argument used or resource '{args[2]}' already exists")
         except NotFound:

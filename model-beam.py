@@ -8,13 +8,11 @@ import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.transforms.window import FixedWindows
 
-"""
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras.applications.vgg16 import preprocess_input
+
+from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 import numpy as np
 
-model = VGG16()
-"""
+model = VGG16(input_shape=(256, 256))
 
 class GroupWindowsIntoBatches(beam.PTransform):
     """
@@ -36,17 +34,22 @@ class GroupWindowsIntoBatches(beam.PTransform):
 class PredictLabel(beam.DoFn):
 
     def process(self, element):
-        """pubsub input is a byte string"""
         #data = element.decode('utf-8')
         # https://stackoverflow.com/questions/53376786/convert-byte-array-back-to-numpy-array
 
+        # load bytestring into numpy array
         load_bytes = BytesIO(element)
-        q = np.load(load_bytes, allow_pickle=True)
+        img = np.load(load_bytes, allow_pickle=True)
+        # expand dimensions
+        img = np.expand_dims(img, axis = 0)
+        # prepare image for model
+        img = preprocess_input(img)
 
-        print(q)
-        print(q.shape)
+        prediction = model.predict(img)
+        prediction_label = decode_predictions(prediction, top = 5)
+        print('%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 ))
 
-        data = q.encode('utf-8')
+        # label = prediction_label[0][0][1].encode('utf-8')
         yield element
 
 

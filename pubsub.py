@@ -1,6 +1,6 @@
 from google.cloud import pubsub_v1
 from exception_handler import exception_handler
-import base64
+
 import numpy as np
 from PIL import Image
 
@@ -76,18 +76,21 @@ class PubSubClient:
     def publish_messages(self, project_id, topic_id, ):
         topic_path = self.publisher.topic_path(project_id, topic_id)
 
-        image = Image.open('images/00000001_000.png').resize((256,256), Image.NEAREST)
+        img = Image.open('images/00000001_000.png').resize((256,256), Image.NEAREST)
 
-        data = np.asarray(image)
+        rgbimg = Image.new("RGBA", img.size)
+        rgbimg.paste(img)
+
+        data = np.asarray(rgbimg)
+
+        print(data)
+        print(data.shape)
 
         np_bytes = BytesIO()
         np.save(np_bytes, data, allow_pickle=True)
         np_bytes = np_bytes.getvalue()
-        load_bytes = BytesIO(np_bytes)
-        q = np.load(load_bytes, allow_pickle=True)
 
-        print(q)
-        print(q.shape)
+
         
         # When you publish a message, the client returns a future.
         future = self.publisher.publish(topic_path, np_bytes)
@@ -100,4 +103,4 @@ class PubSubClient:
 
 if __name__ == "__main__":
     ps = PubSubClient()
-    ps.publish_messages("naku-demo", "naku-input-topic")
+    ps.publish_messages("naku-dema", "naku-input-topic")

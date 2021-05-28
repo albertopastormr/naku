@@ -1,11 +1,6 @@
-import os
 from google.cloud import dataproc_v1 as dataproc
 
-#from google.cloud import storage
-
 from exception_handler import exception_handler
-import re
-from datetime import datetime
 
 
 class DataprocClient:
@@ -22,17 +17,33 @@ class DataprocClient:
         )
 
 
-    @exception_handler
+    #@exception_handler
     def create_cluster(self, project_id, cluster_name):
         cluster_config = {
             "project_id": project_id,
             "cluster_name": cluster_name,
             "config": { 
-                "master_config": {"num_instances": 1, "machine_type_uri": "n1-standard-2"},
-                "worker_config": {"num_instances": 2, "machine_type_uri": "n1-standard-2"},
+                "master_config": {
+                    "num_instances": 1, 
+                    "machine_type_uri": "n1-standard-2",
+                    "disk_config": {
+                        "boot_disk_type": "pd-standard",
+                        "boot_disk_size_gb": 30,
+                        "num_local_ssds": 0
+                    },    
+                },
+                "worker_config": {
+                    "num_instances": 2, 
+                    "machine_type_uri": "n1-standard-2",
+                    "disk_config": {
+                        "boot_disk_type": "pd-standard",
+                        "boot_disk_size_gb": 30,
+                        "num_local_ssds": 0
+                    },
+                },
                 "initialization_actions":[ {"executable_file":f'gs://goog-dataproc-initialization-actions-{self.region}/python/pip-install.sh'}],
                 "gce_cluster_config": { # TODO: take pip packages from requirements.txt
-                    "metadata": {'PIP_PACKAGES':'apache-beam[gcp]==2.29.0 numpy==1.19.5'},
+                    "metadata": {'PIP_PACKAGES':'apache-beam[gcp]==2.29.0 numpy==1.19.5 tensorflow==2.5.0 keras==2.4.3'},
                     "service_account_scopes": [
                         "https://www.googleapis.com/auth/cloud-platform",
                         "https://www.googleapis.com/auth/pubsub"
@@ -109,7 +120,7 @@ class DataprocClient:
 if __name__ == '__main__':
     dp = DataprocClient("europe-west1")
     #dp.delete_cluster("naku-demo", "naku-dataproc-cluster")
-    dp.create_cluster("naku-demo", "naku-dataproc-cluster")
+    dp.create_cluster("naku-dema", "naku-dataproc-cluster")
 
 
 
