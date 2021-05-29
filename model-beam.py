@@ -8,33 +8,7 @@ import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.transforms.window import FixedWindows
 
-import tensorflow as tf
-#from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
-
-model = VGG16(input_shape = (224, 224, 3),
-    include_top = False, 
-    weights = 'imagenet')
-
-"""
-for layer in model.layers:
-    layer.trainable = False
-
-x = tf.keras.layers.Flatten()(model.output)
-
-# Add a fully connected layer with 512 hidden units and ReLU activation
-x = tf.keras.layers.Dense(512, activation='relu')(x)
-
-# Add a dropout rate of 0.5
-x = tf.keras.layers.Dropout(0.5)(x)
-
-# Add a final sigmoid layer for classification
-x = tf.keras.layers.Dense(1, activation='sigmoid')(x)
-
-model = tf.keras.models.Model(model.input, x)
-
-model.compile(optimizer = tf.keras.optimizers.RMSprop(lr=0.0001), loss = 'binary_crossentropy',metrics = ['acc'])
-    """
+from tensorflow.keras.applications.vgg16 import VGG16, decode_predictions
 
 class GroupWindowsIntoBatches(beam.PTransform):
     """
@@ -59,20 +33,16 @@ class PredictLabel(beam.DoFn):
         #data = element.decode('utf-8')
         # https://stackoverflow.com/questions/53376786/convert-byte-array-back-to-numpy-array
 
-        # load bytestring into numpy array
+        model = VGG16()
         load_bytes = BytesIO(element)
         img = np.load(load_bytes, allow_pickle=True)
-        # expand dimensions
-        img = np.expand_dims(img, axis = 0)
-        # prepare image for model
-        img = preprocess_input(img)
 
         prediction = model.predict(img)
         prediction_label = decode_predictions(prediction, top = 5)
         print('%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 ))
 
-        # label = prediction_label[0][0][1].encode('utf-8')
-        yield element
+        label = prediction_label[0][0][1].encode('utf-8')
+        yield label
 
 
 def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipeline_args=None):

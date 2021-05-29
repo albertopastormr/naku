@@ -3,6 +3,8 @@ from exception_handler import exception_handler
 
 import numpy as np
 from PIL import Image
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.vgg16 import preprocess_input
 
 
 from io import BytesIO
@@ -76,12 +78,21 @@ class PubSubClient:
     def publish_messages(self, project_id, topic_id, ):
         topic_path = self.publisher.topic_path(project_id, topic_id)
 
-        img = Image.open('images/00000001_000.png').resize((224,224), Image.NEAREST)
+        file_path = 'images/00000001_000.png'
 
+        #img = Image.open().resize((224,224), Image.NEAREST)
+        img = image.load_img(file_path, target_size = (224, 224))
+
+        data = image.img_to_array(img)
+        data = np.expand_dims(data, axis = 0)
+        data = preprocess_input(data)
+        
+        """
         rgbimg = Image.new("RGB", img.size)
         rgbimg.paste(img)
 
         data = np.asarray(rgbimg)
+        """
 
         print(data.shape)
 
