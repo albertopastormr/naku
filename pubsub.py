@@ -76,14 +76,13 @@ class PubSubClient:
     def publish_messages(self, project_id, topic_id, ):
         topic_path = self.publisher.topic_path(project_id, topic_id)
 
-        img = Image.open('images/00000001_000.png').resize((256,256), Image.NEAREST)
+        img = Image.open('images/00000001_000.png').resize((224,224), Image.NEAREST)
 
-        rgbimg = Image.new("RGBA", img.size)
+        rgbimg = Image.new("RGB", img.size)
         rgbimg.paste(img)
 
         data = np.asarray(rgbimg)
 
-        print(data)
         print(data.shape)
 
         np_bytes = BytesIO()

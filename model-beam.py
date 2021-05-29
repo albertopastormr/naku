@@ -8,11 +8,33 @@ import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.transforms.window import FixedWindows
 
-
+import tensorflow as tf
+#from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
-import numpy as np
 
-model = VGG16(input_shape=(256, 256))
+model = VGG16(input_shape = (224, 224, 3),
+    include_top = False, 
+    weights = 'imagenet')
+
+"""
+for layer in model.layers:
+    layer.trainable = False
+
+x = tf.keras.layers.Flatten()(model.output)
+
+# Add a fully connected layer with 512 hidden units and ReLU activation
+x = tf.keras.layers.Dense(512, activation='relu')(x)
+
+# Add a dropout rate of 0.5
+x = tf.keras.layers.Dropout(0.5)(x)
+
+# Add a final sigmoid layer for classification
+x = tf.keras.layers.Dense(1, activation='sigmoid')(x)
+
+model = tf.keras.models.Model(model.input, x)
+
+model.compile(optimizer = tf.keras.optimizers.RMSprop(lr=0.0001), loss = 'binary_crossentropy',metrics = ['acc'])
+    """
 
 class GroupWindowsIntoBatches(beam.PTransform):
     """

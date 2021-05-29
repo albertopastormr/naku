@@ -28,7 +28,7 @@ class DataprocClient:
                     "machine_type_uri": "n1-standard-2",
                     "disk_config": {
                         "boot_disk_type": "pd-standard",
-                        "boot_disk_size_gb": 30,
+                        "boot_disk_size_gb": 50,
                         "num_local_ssds": 0
                     },    
                 },
@@ -37,7 +37,7 @@ class DataprocClient:
                     "machine_type_uri": "n1-standard-2",
                     "disk_config": {
                         "boot_disk_type": "pd-standard",
-                        "boot_disk_size_gb": 30,
+                        "boot_disk_size_gb": 50,
                         "num_local_ssds": 0
                     },
                 },
