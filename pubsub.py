@@ -78,32 +78,21 @@ class PubSubClient:
     def publish_messages(self, project_id, topic_id, ):
         topic_path = self.publisher.topic_path(project_id, topic_id)
 
-        file_path = 'images/00000001_000.png'
+        filename = '00000001_000.png'
+        filepath = 'images/' + filename
 
-        #img = Image.open().resize((224,224), Image.NEAREST)
-        img = image.load_img(file_path, target_size = (224, 224))
+        img = image.load_img(filepath, target_size = (224, 224))
 
         data = image.img_to_array(img)
         data = np.expand_dims(data, axis = 0)
         data = preprocess_input(data)
         
-        """
-        rgbimg = Image.new("RGB", img.size)
-        rgbimg.paste(img)
-
-        data = np.asarray(rgbimg)
-        """
-
-        print(data.shape)
 
         np_bytes = BytesIO()
         np.save(np_bytes, data, allow_pickle=True)
         np_bytes = np_bytes.getvalue()
-
-
         
-        # When you publish a message, the client returns a future.
-        future = self.publisher.publish(topic_path, np_bytes)
+        future = self.publisher.publish(topic_path, np_bytes, filename=filename)
         print(future.result())
 
         print(f"Published messages to {topic_path}.")

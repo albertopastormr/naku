@@ -32,17 +32,21 @@ class PredictLabel(beam.DoFn):
     def process(self, element):
         #data = element.decode('utf-8')
         # https://stackoverflow.com/questions/53376786/convert-byte-array-back-to-numpy-array
-
+        data = element.data
+        filename = element.attributes['filename']
+        
         model = VGG16()
-        load_bytes = BytesIO(element)
+        load_bytes = BytesIO(data)
         img = np.load(load_bytes, allow_pickle=True)
 
         prediction = model.predict(img)
         prediction_label = decode_predictions(prediction, top = 5)
-        print('%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 ))
-
-        label = prediction_label[0][0][1].encode('utf-8')
-        yield label
+        label = '%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 )
+        print(label)
+        
+        #record = {'filename': filename, 'label':label}
+        record = beam.io.PubsubMessage(label.encode("utf-8"), {'filename':filename})
+        yield record
 
 
 def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipeline_args=None):
@@ -57,11 +61,11 @@ def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipe
     with beam.Pipeline(options=pipeline_options) as pipeline:
         (
             pipeline
-            | 'Read from input topic (PubSub)' >> beam.io.ReadFromPubSub(subscription=f'projects/{project_id}/subscriptions/{input_sub}')
+            | 'Read from input topic (PubSub)' >> beam.io.ReadFromPubSub(subscription=f'projects/{project_id}/subscriptions/{input_sub}', with_attributes=True)
             | "Window into" >> GroupWindowsIntoBatches(window_size)
             | 'Predict the label of each image' >> beam.ParDo(PredictLabel())
             #| 'Print results' >> beam.Map(print)
-            | 'Write to output topic' >>  beam.io.WriteToPubSub(topic=f'projects/{project_id}/topics/{output_topic}')
+            | 'Write to output topic' >>  beam.io.WriteToPubSub(topic=f'projects/{project_id}/topics/{output_topic}', with_attributes=True)
         )
 
 if __name__ =="__main__":
