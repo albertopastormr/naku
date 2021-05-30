@@ -75,7 +75,7 @@ class DataprocClient:
                             + f"\n\tNumber of workers: {cluster.config.worker_config.num_instances}")
 
     @exception_handler
-    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename, input_sub, output_topic,):
+    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename, input_sub, output_topic):
 
         job = {
                 'placement': {

@@ -1,4 +1,5 @@
 import argparse
+from launch import LaunchService
 
 from pubsub import PubSubClient
 from dataproc import DataprocClient
@@ -77,8 +78,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    print(args) # to debug
-
     if args.action == "init":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
@@ -94,9 +93,14 @@ if __name__ == '__main__':
     elif args.action == "launch":
         dp = DataprocClient(REGION)
         st = StorageClient()
+        
         st.upload_file(BUCKET_NAME, args.pyspark_filename, args.pyspark_filename)
-        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename, INPUT_SUB_NAME, OUTPUT_TOPIC_NAME,)
-        # publish_messages(args.project_id, args.topic_id)
+        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename, INPUT_SUB_NAME, OUTPUT_TOPIC_NAME)
+
+        ls = LaunchService(PubSubClient(), args.project_id, INPUT_TOPIC_NAME, OUTPUT_SUB_NAME, directory='images', run_async=True)
+        ls.start()
+
+        # TODO: stop Dataproc job 
     elif args.action == "delete":
         ps = PubSubClient()
         dp = DataprocClient(REGION)

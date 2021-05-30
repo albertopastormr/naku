@@ -44,7 +44,7 @@ class PredictLabel(beam.DoFn):
         label = '%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 )
         print(label)
         
-        #record = {'filename': filename, 'label':label}
+
         record = beam.io.PubsubMessage(label.encode("utf-8"), {'filename':filename})
         yield record
 
@@ -54,7 +54,7 @@ def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipe
         "--runner=PortableRunner",
         "--job_endpoint=localhost:7077",
         "--environment_type=LOOPBACK"
-    ]) # docs: https://beam.apache.org/documentation/runners/spark/
+    ]) # docs: https://beam.apache.org/documentation/runners/spark/ # TODO: check this
     pipeline_options = PipelineOptions(
         pipeline_args, streaming=True, save_main_session=True)
 
@@ -62,7 +62,7 @@ def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipe
         (
             pipeline
             | 'Read from input topic (PubSub)' >> beam.io.ReadFromPubSub(subscription=f'projects/{project_id}/subscriptions/{input_sub}', with_attributes=True)
-            | "Window into" >> GroupWindowsIntoBatches(window_size)
+            | "Window into" >> GroupWindowsIntoBatches(window_size) #TODO: check if it is neccessary to do this
             | 'Predict the label of each image' >> beam.ParDo(PredictLabel())
             #| 'Print results' >> beam.Map(print)
             | 'Write to output topic' >>  beam.io.WriteToPubSub(topic=f'projects/{project_id}/topics/{output_topic}', with_attributes=True)
@@ -91,7 +91,5 @@ if __name__ =="__main__":
 
     known_args, pipeline_args = parser.parse_known_args()
 
-    print(known_args)
-    print(pipeline_args)
     run(project_id=known_args.project_id, input_sub=known_args.input_sub, output_topic=known_args.output_topic,
         window_size=known_args.window_size, pipeline_args="--runner DirectRunner")

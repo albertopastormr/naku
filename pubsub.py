@@ -1,15 +1,6 @@
 from google.cloud import pubsub_v1
+from concurrent.futures import TimeoutError
 from exception_handler import exception_handler
-
-import numpy as np
-from PIL import Image
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.vgg16 import preprocess_input
-
-
-from io import BytesIO
-
-
 
 class PubSubClient:
     
@@ -42,9 +33,6 @@ class PubSubClient:
         for topic in self.publisher.list_topics(request={"project": project_path}):
             print("  --> " + topic.name)
 
-    def publish_messages(self, project_id, topic_id):
-        pass
-    
     @exception_handler
     def create_subscription(self, project_id, topic_id, subscription_id):
         topic_path = self.publisher.topic_path(project_id, topic_id)
@@ -75,28 +63,29 @@ class PubSubClient:
             print("  --> " + subscription.name)
     
     @exception_handler
-    def publish_messages(self, project_id, topic_id, ):
+    def publish_message(self, project_id, topic_id, payload, attrs):
         topic_path = self.publisher.topic_path(project_id, topic_id)
 
-        filename = '00000001_000.png'
-        filepath = 'images/' + filename
+        future = self.publisher.publish(topic_path, payload, **attrs)
+        future.result()
 
-        img = image.load_img(filepath, target_size = (224, 224))
+        print(f"Published message to {topic_path}.")
 
-        data = image.img_to_array(img)
-        data = np.expand_dims(data, axis = 0)
-        data = preprocess_input(data)
+    @exception_handler
+    def consume_messages(self, project_id, sub_id, timeout):
+        subscription_path = self.subscriber.subscription_path(project_id, sub_id)
         
+        def callback(message):
+            print(f"Received message {message.data.decode('utf-8')} [{message.attributes}]")
+            message.ack()
 
-        np_bytes = BytesIO()
-        np.save(np_bytes, data, allow_pickle=True)
-        np_bytes = np_bytes.getvalue()
-        
-        future = self.publisher.publish(topic_path, np_bytes, filename=filename)
-        print(future.result())
-
-        print(f"Published messages to {topic_path}.")
-
+        streaming_pull_future = self.subscriber.subscribe(subscription_path, callback=callback)
+        print(f"Listening for messages on {subscription_path}..\n")
+        try:
+                streaming_pull_future.result(timeout=timeout)
+        except TimeoutError:
+                streaming_pull_future.cancel()
+                print(f'Timeout on {subscription_path} ({timeout} seconds)')
 
 # docs to consume messages http://www.theappliedarchitect.com/setting-up-gcp-pub-sub-integration-with-python/
 
