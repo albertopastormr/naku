@@ -63,6 +63,9 @@ def parse_args():
 
     parser_delete.add_argument('--keep_jobs', dest='keep_jobs', action='store_true',
                            help="whether to delete the jobs submitted by the cluster")
+    
+    parser_delete.add_argument('--only_jobs', dest='only_jobs', action='store_true',
+                           help="deletes only the jobs previously submitted")
 
     parser_list = subparsers.add_parser('list')
 
@@ -95,27 +98,33 @@ if __name__ == '__main__':
         st = StorageClient()
         
         st.upload_file(BUCKET_NAME, args.pyspark_filename, args.pyspark_filename)
-        dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename, INPUT_SUB_NAME, OUTPUT_TOPIC_NAME)
+        job_id = dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename, INPUT_SUB_NAME, OUTPUT_TOPIC_NAME)
 
         ls = LaunchService(PubSubClient(), args.project_id, INPUT_TOPIC_NAME, OUTPUT_SUB_NAME, directory='images', run_async=True)
-        ls.start()
+        try:
+            ls.start()
+        finally:
+            dp.cancel_job(args.project_id, job_id)
 
         # TODO: stop Dataproc job 
     elif args.action == "delete":
         ps = PubSubClient()
         dp = DataprocClient(REGION)
         st = StorageClient()
-        ps.delete_topic(args.project_id, INPUT_TOPIC_NAME)
-        ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
-        ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
-        ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
-        if not args.keep_jobs:
+        if args.only_jobs:
             dp.delete_jobs(args.project_id)
-        dp.delete_cluster(args.project_id, CLUSTER_NAME)
-        st.delete_bucket(BUCKET_NAME)
-        st.delete_buckets_by_prefix('dataproc-')
-        if args.del_ser_acc:
-            delete_service_account(SERVICE_ACCOUNT_NAME, args.project_id)
+        else:
+            ps.delete_topic(args.project_id, INPUT_TOPIC_NAME)
+            ps.delete_topic(args.project_id, OUTPUT_TOPIC_NAME)
+            ps.delete_subscription(args.project_id, INPUT_SUB_NAME)
+            ps.delete_subscription(args.project_id, OUTPUT_SUB_NAME)
+            if not args.keep_jobs:
+                dp.delete_jobs(args.project_id)
+            dp.delete_cluster(args.project_id, CLUSTER_NAME)
+            st.delete_bucket(BUCKET_NAME)
+            st.delete_buckets_by_prefix('dataproc-')
+            if args.del_ser_acc:
+                delete_service_account(SERVICE_ACCOUNT_NAME, args.project_id)
 
         print("(The changes may take some time to be reflected in your GCP project)")
     elif args.action == "list":

@@ -6,65 +6,63 @@ from io import BytesIO
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-from apache_beam.transforms.window import FixedWindows
+from apache_beam.utils import shared
 
 from tensorflow.keras.applications.vgg16 import VGG16, decode_predictions
 
-class GroupWindowsIntoBatches(beam.PTransform):
-    """
-    A composite transform that groups Pub/Sub messages
-    """
-    def __init__(self, window_size):
-        # Convert minutes into seconds.
-        self.window_size = int(window_size * 60)
+class WeakRefModel():
+   def __init__(self, model):
+       self.model=model
 
-    def expand(self, pcoll):
-        return (
-            pcoll
-            # Assigns window info to each Pub/Sub message based on its
-            # publish timestamp.
-            | "Window into Fixed Intervals"
-            >> beam.WindowInto(FixedWindows(self.window_size))
-        )
+class DoManualInference(beam.DoFn):
+   def __init__(self, shared_handle, saved_model_path=None):
+       self._shared_handle = shared_handle
+       self._saved_model_path = saved_model_path # TODO: check this to use pretrained models
+       # docs: https://cloud.google.com/blog/products/data-analytics/ml-inference-in-dataflow-pipelines
+       # docs: https://beam.apache.org/releases/pydoc/2.24.0/apache_beam.utils.shared.html
+       # docs: https://keras.io/api/applications/vgg/
+  
+   def setup(self):
+       def initialize_model():
+            # Load a potentially large model in memory. Executed once per process, it can be shared across workers
+            #return WeakRefModel(tf.saved_model.load(self._saved_model_path, ["serve"])) TODO: check this to use pretrained models
+            return VGG16()
+      
+       self._weakRefModel = self._shared_handle.acquire(initialize_model)
+  
+   def process(self, input_batch):
+        for idx, x in enumerate(input_batch):
+            data = x.data
+            filename = x.attributes['filename']
+            
+            load_bytes = BytesIO(data)
+            img = np.load(load_bytes, allow_pickle=True)
 
-class PredictLabel(beam.DoFn):
-
-    def process(self, element):
-        #data = element.decode('utf-8')
-        # https://stackoverflow.com/questions/53376786/convert-byte-array-back-to-numpy-array
-        data = element.data
-        filename = element.attributes['filename']
-        
-        model = VGG16()
-        load_bytes = BytesIO(data)
-        img = np.load(load_bytes, allow_pickle=True)
-
-        prediction = model.predict(img)
-        prediction_label = decode_predictions(prediction, top = 5)
-        label = '%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 )
-        print(label)
-        
-
-        record = beam.io.PubsubMessage(label.encode("utf-8"), {'filename':filename})
-        yield record
+            prediction = self._weakRefModel.predict(img)
+            prediction_label = decode_predictions(prediction, top = 5)
+            label = '%s (%.2f%%)' % (prediction_label[0][0][1], prediction_label[0][0][2]*100 )
+            print(idx, label) # used within gcp console for debugging
+            
+            record = beam.io.PubsubMessage(label.encode("utf-8"), {'filename':filename})
+            yield record
 
 
-def run(project_id, input_sub, output_topic, window_size=1.0, num_shards=5, pipeline_args=None):
+def run(project_id, input_sub, output_topic, pipeline_args=None):
     options = PipelineOptions([
         "--runner=PortableRunner",
         "--job_endpoint=localhost:7077",
         "--environment_type=LOOPBACK"
-    ]) # docs: https://beam.apache.org/documentation/runners/spark/ # TODO: check this
+    ]) # docs: https://beam.apache.org/documentation/runners/spark/ # TODO: check this to try Spark runner (portable runner)
     pipeline_options = PipelineOptions(
         pipeline_args, streaming=True, save_main_session=True)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
+        shared_handle = shared.Shared()
         (
             pipeline
             | 'Read from input topic (PubSub)' >> beam.io.ReadFromPubSub(subscription=f'projects/{project_id}/subscriptions/{input_sub}', with_attributes=True)
-            | "Window into" >> GroupWindowsIntoBatches(window_size) #TODO: check if it is neccessary to do this
-            | 'Predict the label of each image' >> beam.ParDo(PredictLabel())
-            #| 'Print results' >> beam.Map(print)
+            | 'Batch elements' >> beam.BatchElements(min_batch_size=1, max_batch_size=10)
+            | 'Predict the label of each image' >> beam.ParDo(DoManualInference(shared_handle=shared_handle))
             | 'Write to output topic' >>  beam.io.WriteToPubSub(topic=f'projects/{project_id}/topics/{output_topic}', with_attributes=True)
         )
 
@@ -82,14 +80,7 @@ if __name__ =="__main__":
         "--output_topic",
         help="The Cloud Pub/Sub topic to write to.",
     )
-    parser.add_argument(
-        "--window_size",
-        type=float,
-        default=1.0,
-        help="Output file's window size in minutes.",
-    )
 
     known_args, pipeline_args = parser.parse_known_args()
 
-    run(project_id=known_args.project_id, input_sub=known_args.input_sub, output_topic=known_args.output_topic,
-        window_size=known_args.window_size, pipeline_args="--runner DirectRunner")
+    run(project_id=known_args.project_id, input_sub=known_args.input_sub, output_topic=known_args.output_topic, pipeline_args="--runner DirectRunner")

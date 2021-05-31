@@ -16,8 +16,7 @@ class DataprocClient:
             client_options={'api_endpoint': self.api_endpoint}
         )
 
-
-    #@exception_handler
+    @exception_handler
     def create_cluster(self, project_id, cluster_name):
         cluster_config = {
             "project_id": project_id,
@@ -96,6 +95,7 @@ class DataprocClient:
         print(f"Job submitted: {job_id}")
         print(f"You can check its execution details and output at:"
                 f" https://console.cloud.google.com/dataproc/jobs/{job_id}?region={self.region}&project={project_id}")
+        return job_id
 
     @exception_handler
     def list_jobs(self, project_id):
@@ -107,21 +107,22 @@ class DataprocClient:
                             + f' ({job.status.state_start_time.strftime("%H:%M:%S %d-%m-%Y")})'
                             + f' [https://console.cloud.google.com/dataproc/jobs/{job.reference.job_id}?region={self.region}&project={project_id}]')
 
+    @exception_handler
     def delete_jobs(self, project_id):
         for job in self.job_client.list_jobs(request={"project_id": project_id, "region":self.region}):
             self.job_client.delete_job(
                 request={"project_id":project_id, "region":self.region, "job_id":job.reference.job_id}
             )
             print(f"Job deleted: {job.reference.job_id}")
+    
+    @exception_handler
+    def cancel_job(self, project_id, job_id):
+        operation = self.job_client.cancel_job(
+            request={"project_id": project_id, "region": self.region, "job_id": job_id}
+        )
 
-    # delete jobs https://googleapis.dev/python/dataproc/latest/dataproc_v1beta2/job_controller.html#google.cloud.dataproc_v1beta2.services.job_controller.JobControllerAsyncClient.delete_job
-
-
-if __name__ == '__main__':
-    dp = DataprocClient("europe-west1")
-    #dp.delete_cluster("naku-demo", "naku-dataproc-cluster")
-    dp.create_cluster("naku-dema", "naku-dataproc-cluster")
-
+        job_id = operation.reference.job_id
+        print(f"Job canceled: {job_id}")
 
 
 """ # this corresponds to the cluster creation command via CLI
