@@ -44,11 +44,7 @@ class StorageClient:
     
     @exception_handler
     def delete_buckets_by_prefix(self, prefix):
-        """Deletes all the buckets corresponding. Every bucket must be empty."""
-
-        #bucket = self.storage_client.get_bucket(bucket_name)
-        #bucket.delete()
-
+        """Deletes all the buckets corresponding."""
         buckets = self.storage_client.list_buckets()
         
         for bucket in buckets:

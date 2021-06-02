@@ -60,7 +60,7 @@ def run(project_id, input_sub, output_topic, pipeline_args=None):
         shared_handle = shared.Shared()
         (
             pipeline
-            | 'Read from input topic (PubSub)' >> beam.io.ReadFromPubSub(subscription=f'projects/{project_id}/subscriptions/{input_sub}', with_attributes=True)
+            | 'Read from input subscription' >> beam.io.ReadFromPubSub(subscription=f'projects/{project_id}/subscriptions/{input_sub}', with_attributes=True)
             | 'Batch elements' >> beam.BatchElements(min_batch_size=1, max_batch_size=10)
             | 'Predict the label of each image' >> beam.ParDo(DoManualInference(shared_handle=shared_handle))
             | 'Write to output topic' >>  beam.io.WriteToPubSub(topic=f'projects/{project_id}/topics/{output_topic}', with_attributes=True)
