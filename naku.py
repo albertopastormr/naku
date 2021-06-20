@@ -25,7 +25,7 @@ ZONE="europe-west1-b"
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='naku',
-            description='Test ML models over Google Cloud Platform')
+            description='Test ML models on Google Cloud Platform')
             
     subparsers = parser.add_subparsers(title='action', 
                                         dest='action',
@@ -105,8 +105,6 @@ if __name__ == '__main__':
             ls.start()
         finally:
             dp.cancel_job(args.project_id, job_id)
-
-        # TODO: stop Dataproc job 
     elif args.action == "delete":
         ps = PubSubClient()
         dp = DataprocClient(REGION)

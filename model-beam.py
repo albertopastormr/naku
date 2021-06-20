@@ -83,4 +83,6 @@ if __name__ =="__main__":
 
     known_args, pipeline_args = parser.parse_known_args()
 
+    print(known_args)
+
     run(project_id=known_args.project_id, input_sub=known_args.input_sub, output_topic=known_args.output_topic, pipeline_args="--runner DirectRunner")
