@@ -6,8 +6,7 @@ from dataproc import DataprocClient
 from storage import StorageClient
 from auth import auth_gcp, delete_service_account
 
-
-# once I create config.yaml, project_id could be set there
+# once I create a config.yaml, project_id could be set there
 # and the required=True could evaluate whether project_id has been
 # set in the config.yaml
 # The import of the variables from this file should also be controlled
@@ -20,8 +19,12 @@ OUTPUT_SUB_NAME="naku-output-sub"
 CLUSTER_NAME="naku-dataproc-cluster"
 BUCKET_NAME="naku-support-bucket"
 PYSPARK_FILENAME="model-beam.py"
+MODEL_FILENAME="model-trained.h5"
+LABELS_FILENAME='labels.npy'
 REGION="europe-west1" 
 ZONE="europe-west1-b"
+IMAGE_SIZE=(64, 64)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='naku',
@@ -52,6 +55,12 @@ def parse_args():
 
     parser_launch.add_argument("-f", '--filename', dest='pyspark_filename', type=str, default=PYSPARK_FILENAME,
                            help="PySpark file to execute on Dataproc")
+    
+    parser_launch.add_argument("-m", '--model', dest='model_filename', type=str, default=MODEL_FILENAME,
+                           help="Keras model to load on Dataproc")
+                        
+    parser_launch.add_argument("-l", '--labels', dest='labels_filename', type=str, default=LABELS_FILENAME,
+                           help="Keras model to load on Dataproc")
 
     parser_delete = subparsers.add_parser('delete')
 
@@ -98,9 +107,13 @@ if __name__ == '__main__':
         st = StorageClient()
         
         st.upload_file(BUCKET_NAME, args.pyspark_filename, args.pyspark_filename)
-        job_id = dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename, INPUT_SUB_NAME, OUTPUT_TOPIC_NAME)
-
-        ls = LaunchService(PubSubClient(), args.project_id, INPUT_TOPIC_NAME, OUTPUT_SUB_NAME, directory='images', run_async=True)
+        st.upload_file(BUCKET_NAME, args.model_filename, args.model_filename)
+        st.upload_file(BUCKET_NAME, args.labels_filename, args.labels_filename)
+        job_id = dp.submit_job(args.project_id, CLUSTER_NAME, BUCKET_NAME, args.pyspark_filename,
+                                 INPUT_SUB_NAME, OUTPUT_TOPIC_NAME, args.model_filename, args.labels_filename)
+        
+        ls = LaunchService(PubSubClient(), args.project_id, INPUT_TOPIC_NAME, OUTPUT_SUB_NAME,
+                             directory='images/test', run_async=True, image_size=IMAGE_SIZE)
         try:
             ls.start()
         finally:

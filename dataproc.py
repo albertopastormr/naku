@@ -74,7 +74,8 @@ class DataprocClient:
                             + f"\n\tNumber of workers: {cluster.config.worker_config.num_instances}")
 
     @exception_handler
-    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename, input_sub, output_topic):
+    def submit_job(self, project_id, cluster_name, bucket_name, pyspark_filename, input_sub, output_topic,
+                    model_filename, labels_filename):
 
         job = {
                 'placement': {
@@ -83,7 +84,9 @@ class DataprocClient:
                 'pyspark_job': {
                     'main_python_file_uri': f'gs://{bucket_name}/{pyspark_filename}',
                     'args': [f'--project_id={project_id}', f'--input_sub={input_sub}',
-                             f'--output_topic={output_topic}']
+                             f'--output_topic={output_topic}', f'--saved_model_path={model_filename}',
+                             f'--labels_path={labels_filename}'],
+                    'file_uris': [f'gs://{bucket_name}/{model_filename}', f'gs://{bucket_name}/{labels_filename}']
                 }
             }
 
